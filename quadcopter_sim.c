@@ -1,7 +1,6 @@
 /*
  * quadcopter_sim.c
  *
- * C conversion of the MATLAB quadcopter flight simulator (Assignment 3 - Part 2).
  * Simulates a quadcopter's rigid-body dynamics with a PID attitude controller.
  *
  * Concepts implemented:
@@ -27,9 +26,7 @@
 /* =========================================================================
  * DATA TYPES
  * =========================================================================
- * We replace MATLAB's dynamic struct with a plain C struct.
- * Every field maps 1-to-1 to the MATLAB state struct fields.
- * ========================================================================= */
+*/
 
 /* A 3-element column vector  */
 typedef struct { double v[3]; } Vec3;
@@ -40,9 +37,7 @@ typedef struct { double m[3][3]; } Mat3;
 /*
  * QuadState - the master state struct.
  *
- * The MATLAB code accumulates every physical and control variable inside
  * a single 'state' struct that is passed by value through every function.
- * We mirror that design here so the logic stays readable.
  */
 typedef struct {
 
@@ -89,8 +84,7 @@ typedef struct {
 /* =========================================================================
  * MATH HELPERS
  * =========================================================================
- * MATLAB has built-in matrix ops.  In C we need small inline helpers.
- * ========================================================================= */
+ */
 
 /*
  * mat3_mul_vec3 - multiply a 3x3 matrix by a 3-vector.
@@ -113,7 +107,7 @@ static Vec3 mat3_mul_vec3(const Mat3 *A, const Vec3 *b)
  * mat3_solve - solve A*x = b for x  (Gaussian elimination, 3x3).
  *
  * Used to invert the kinematic mapping W in update_thetadot():
- *     thetadot = W \ omega   (MATLAB backslash)
+ *     thetadot = W \ omega 
  */
 static Vec3 mat3_solve(const Mat3 *A, const Vec3 *b)
 {
@@ -173,7 +167,7 @@ static Vec3 cross3(const Vec3 *a, const Vec3 *b)
  * ========================================================================= */
 
 /*
- * setup_state()  <->  MATLAB setup_state()
+ * setup_state()
  *
  * Initialises every field of QuadState to its physical starting value.
  *
@@ -230,7 +224,7 @@ QuadState setup_state(void)
  * ========================================================================= */
 
 /*
- * update_R()  <->  MATLAB update_R()
+ * update_R()
  *
  * Builds the ZYX (3-2-1) Direction Cosine Matrix (DCM) from Euler angles.
  *
@@ -270,7 +264,7 @@ static void update_R(QuadState *s)
 }
 
 /*
- * update_W()  <->  MATLAB update_W()
+ * update_W()
  *
  * Builds the kinematic mapping matrix W such that:
  *       omega_body = W * thetadot
@@ -311,7 +305,7 @@ static void update_W(QuadState *s)
  * ========================================================================= */
 
 /*
- * apply_control()  <->  MATLAB apply_control()
+ * apply_control()
  *
  * This is the flight controller.  It implements a PD attitude stabilisation
  * loop plus a collective-thrust hover computation.
@@ -413,7 +407,7 @@ static void apply_control(QuadState *s)
  * ========================================================================= */
 
 /*
- * update_acceleration()  <->  MATLAB update_acceleration()
+ * update_acceleration()
  *
  * Computes the world-frame linear acceleration using Newton's 2nd law:
  *
@@ -444,7 +438,7 @@ static void update_acceleration(QuadState *s)
 }
 
 /*
- * update_omega()  <->  MATLAB update_omega()
+ * update_omega()
  *
  * Converts Euler-angle rates (thetadot) to body angular velocity (omega):
  *
@@ -461,7 +455,7 @@ static void update_omega(QuadState *s)
 }
 
 /*
- * update_omegadot()  <->  MATLAB update_omegadot()
+ * update_omegadot()
  *
  * Implements Euler's rotational equation of motion:
  *
@@ -505,7 +499,7 @@ static void update_omegadot(QuadState *s)
  * ========================================================================= */
 
 /*
- * update_thetadot()  <->  MATLAB update_thetadot()
+ * update_thetadot()
  *
  * Recovers Euler-angle rates from the (just-updated) body angular velocity:
  *
@@ -520,7 +514,7 @@ static void update_thetadot(QuadState *s)
 }
 
 /*
- * advance()  <->  MATLAB advance()
+ * advance()
  *
  * Performs one Euler forward-integration step for all state variables.
  *
@@ -530,8 +524,8 @@ static void update_thetadot(QuadState *s)
  *   1. omega    += omegadot * dt       update body angular velocity
  *   2. thetadot  = W^-1 * omega        convert back to Euler rates
  *   3. theta    += thetadot * dt       advance Euler angles
- *   4. xdot     += a * dt             advance linear velocity
- *   5. x        += xdot * dt          advance position
+ *   4. xdot     += a * dt              advance linear velocity
+ *   5. x        += xdot * dt           advance position
  *
  * The order matters: thetadot is recomputed from the newly integrated omega
  * before it is used to advance theta, which is the correct causal order.
@@ -559,11 +553,11 @@ static void advance(QuadState *s)
 }
 
 /* =========================================================================
- * TELEMETRY OUTPUT  (replaces MATLAB graphical 'paint')
+ * TELEMETRY OUTPUT
  * =========================================================================
- * The MATLAB paint() function renders a 3D figure.  In plain C we don't
- * have a graphics library, so we print CSV-formatted telemetry to stdout
- * instead.  The data can be piped into Python/MATLAB/Excel for plotting.
+ * In plain C we don't have a graphics library, so we print CSV-formatted 
+ * telemetry to stdout instead.  The data can be piped into Python/MATLAB/Excel
+ * for plotting.
  * ========================================================================= */
 
 static void print_header(void)
@@ -600,7 +594,6 @@ static void print_state(int step, const QuadState *s)
 /* =========================================================================
  * MAIN SIMULATION LOOP
  * =========================================================================
- * Mirrors the top-level Simulator() function in MATLAB.
  *
  * The loop runs for 1000 steps at dt=0.01 s -> 10 seconds of simulated time.
  *
@@ -610,7 +603,7 @@ static void print_state(int step, const QuadState *s)
  *   3. update_omega       - kinematics: thetadot -> omega
  *   4. update_omegadot    - Euler's equation -> angular acceleration
  *   5. advance            - Euler integration: advance all states by dt
- *   6. print_state        - telemetry output (replaces MATLAB paint)
+ *   6. print_state        - telemetry output
  * ========================================================================= */
 
 int main(void)
